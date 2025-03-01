@@ -136,10 +136,41 @@ with st.sidebar:
 llm_tab, network_tab, save_tab = st.tabs(["LLM", "Network", "Save HOCON file"])
 
 with llm_tab:
-    llm_model = st.selectbox(label='Model',
-                             options=list(OPENAI_MODEL_DICT.keys()),
-                             help='name of the model to use (i.e. “gpt-4o”, “claude-3-haiku”)')
-    temperature = st.slider(label='Temperature', min_value=0.0, max_value=1.0, help='(optional) level of randomnessto use for LLM results')
+    # Initialize values in session state if they don't exist
+    if "llm_model" not in st.session_state:
+        st.session_state.llm_model = list(OPENAI_MODEL_DICT.keys())[0]  # Default model
+
+    if "temperature" not in st.session_state:
+        st.session_state.temperature = 0.5  # Default temperature
+
+    # Selectbox for model selection
+    llm_model = st.selectbox(
+        label="Model",
+        options=list(OPENAI_MODEL_DICT.keys()),
+        index=list(OPENAI_MODEL_DICT.keys()).index(st.session_state.llm_model),
+        help="Name of the model to use (i.e. 'gpt-4o', 'claude-3-haiku')"
+    )
+
+    # Slider for temperature
+    temperature = st.slider(
+        label="Temperature",
+        min_value=0.0,
+        max_value=1.0,
+        value=st.session_state.temperature,  # Preserve value
+        help="(Optional) Level of randomness to use for LLM results"
+    )
+
+    # Update session state only if the value changes
+    if llm_model != st.session_state.llm_model:
+        st.session_state.llm_model = llm_model
+        st.rerun()  # Ensure UI updates immediately
+
+    if temperature != st.session_state.temperature:
+        st.session_state.temperature = temperature
+        st.rerun()  # Ensure UI updates immediately
+
+    # st.write(f"Selected Model: {st.session_state.llm_model}")
+    # st.write(f"Temperature: {st.session_state.temperature}")
 
 with network_tab:
 
