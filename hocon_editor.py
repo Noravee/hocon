@@ -170,7 +170,7 @@ with save_tab:
     data = {
         "llm_config": {
             "model_name": OPENAI_MODEL_DICT[llm_model],
-            "temperatur": temperature,
+            "temperature": temperature,
         },
         "tools": [i for i in st.session_state.inputs.values() if i['name'] != '']
     }
