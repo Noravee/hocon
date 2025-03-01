@@ -1,0 +1,3 @@
+pyhocon==0.3.61
+streamlit==1.42.2
+streamlit-agraph==0.0.45
