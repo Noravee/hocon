@@ -218,16 +218,14 @@ def sidebar_content():
             if filters_changed:
                 st.rerun()
 
-            new = replace_strings_in_nested_dict(st.session_state.inputs, st.session_state.sub_dict)
-            st.write(st.session_state.sub_dict)
-            st.write(new)
+            new_tools = replace_strings_in_nested_dict(st.session_state.inputs, st.session_state.sub_dict)
 
             data = {
                 "llm_config": {
                     "model_name": st.session_state.llm_model,
                     "temperature": st.session_state.temperature,
                 },
-                "tools": [i for i in st.session_state.inputs.values() if i['name'] != '']
+                "tools": [i for i in new_tools.values() if i['name'] != '']
             }
 
             # Convert dictionary to HOCON config
