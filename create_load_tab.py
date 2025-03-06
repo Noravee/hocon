@@ -42,9 +42,7 @@ def create_network():
         "llm_config": {"model_name": st.session_state.llm_model, "temperature": st.session_state.temperature}
     }}  # Store name, instructions, command, and tools per node
     st.session_state.errors = {}  # Store validation errors
-    st.session_state.functions = {}
-    st.session_state.function_errors = {}  # Store function errors
-    st.session_state.function_results = {}
+    st.session_state.function_names = {0: ""}
     st.session_state.hierarchical = False
     st.rerun()
 

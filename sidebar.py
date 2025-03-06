@@ -35,6 +35,7 @@ def sidebar_content():
                     "tools": [],
                     "llm_config": {"model_name": st.session_state.llm_model, "temperature": st.session_state.temperature}
                 }
+                st.session_state.function_names[new_key] = ""
                 st.session_state.errors[new_key] = ""  # Initialize error tracking
 
             # Function to remove a specific input box
@@ -42,6 +43,7 @@ def sidebar_content():
                 if len(st.session_state.inputs) > 1:
                     deleted_node = st.session_state.inputs[key]["name"]
                     del st.session_state.inputs[key]
+                    del st.session_state.function_names[key]
                     del st.session_state.errors[key]  # Remove associated error
 
                     # Remove deleted node from all connection lists
@@ -144,40 +146,28 @@ def sidebar_content():
                         st.session_state.inputs[key]["instructions"] = new_instr
                         st.session_state[expander_key] = True  # Force open when renaming
                         st.rerun()
-                    if key != 0:
-                        prev_command = st.session_state.inputs[key]["command"]
-                        new_command = st.text_area(
-                            "Command", value=st.session_state.inputs[key]["command"],
-                            key=f"command_{key}",
-                            help='User-like message intended for an agent after receiving all the inputs'
-                        )
-                        if new_command != prev_command:
-                            st.session_state.inputs[key]["command"] = new_command
-                            st.session_state[expander_key] = True  # Force open when renaming
-                            st.rerun()
+                    prev_command = st.session_state.inputs[key]["command"]
+                    new_command = st.text_area(
+                        "Command", value=st.session_state.inputs[key]["command"],
+                        key=f"command_{key}",
+                        help='User-like message intended for an agent after receiving all the inputs'
+                    )
+                    if new_command != prev_command:
+                        st.session_state.inputs[key]["command"] = new_command
+                        st.session_state[expander_key] = True  # Force open when renaming
+                        st.rerun()
 
-                        st.session_state.inputs[key]['class'] = st.selectbox(
-                            label="function",
-                            options=list(st.session_state.function_results),
-                            index=None,
-                            key=f"function_{key}",
-                            help="Function called by the agent"
-                        )
-                    else:
-                        prev_func_desc = st.session_state.inputs[key]['function'].get('description')
-                        new_func_desc = st.text_area(
-                            label="Description",
-                            value=st.session_state.inputs[key]['function'].get('description'),
-                            key="frontman_description",
-                            help="Role of the frontman"
-                        )
-                        if new_func_desc != prev_func_desc:
-                            st.session_state.inputs[key]['function']['description'] = new_func_desc
-                            st.session_state[expander_key] = True  # Force open when renaming
-                            st.rerun()
-                        # st.session_state.inputs[key]['function']['description'] = frontman_desc
-                    if st.session_state.function_results and st.session_state.inputs[key]["class"]:
-                        st.session_state.inputs[key]["function"] = st.session_state.function_results[st.session_state.inputs[key]["class"]]
+                    st.session_state.function_names[key] = st.selectbox(
+                                                            label="function",
+                                                            options=list(st.session_state.function_results),
+                                                            index=None,
+                                                            key=f"function_{key}",
+                                                            help="Function called by the agent"
+                                                            )
+
+                    if st.session_state.function_results and st.session_state.function_names[key]:
+                        st.session_state.inputs[key]["function"] = st.session_state.function_results[st.session_state.function_names[key]]['function']
+                        st.session_state.inputs[key]["class"] = st.session_state.function_results[st.session_state.function_names[key]]['class']
 
                 # Expander for each input (contains "llm_config")
                 with st.expander(f"LLM for '{st.session_state.inputs[key]['name'] or 'Node'}'"):

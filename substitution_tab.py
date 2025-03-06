@@ -83,9 +83,6 @@ def substitution_tab_content():
                     else:
                         st.error("Unsupported file format!")
 
-                    st.write(config)
-                    st.write(st.session_state.user_vars.keys())
-
                 except Exception as e:
                     st.error(f"An error occurred while loading the file: {e}")
 
