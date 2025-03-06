@@ -3,17 +3,7 @@ import streamlit as st
 
 TYPES = ['string', 'number', 'integer', 'object', 'array', 'boolean', 'null']
 
-
-# def parse_parameters(parameters: dict):
-
-# def parse_properties(properties: dict):
-
-# def parse_required(required: list):
-
-
 def function_tab_content():
-
-    parameters = {"type": "object", "properties": {}, "required": []}
 
     # Initialize session state variables
     if "functions" not in st.session_state:
@@ -244,19 +234,44 @@ def function_tab_content():
 
                 for func_name, func_dict in config.items():
                     add_input()
-                    new_key = list(st.session_state.functions.keys())[-1]
+                    new_key = max(st.session_state.functions.keys())  # Faster than list()[-1]
+
+                    function_data = func_dict.get('function', {})
+                    parameters = function_data.get('parameters', {})
+                    properties = parameters.get('properties', {})
+
                     st.session_state.functions[new_key]['name'] = func_name
-                    st.session_state.functions[new_key]['description'] = func_dict['function']['description']
-                    if '.' in func_dict['class']:
-                        module_class_list = func_dict['class'].split('.')
-                        st.session_state.functions[new_key]['module'] = module_class_list[0]
-                        st.session_state.functions[new_key]['class'] = module_class_list[1]
-                    st.session_state.functions[new_key]['parameters']['required'] = func_dict['function']['parameters']['required']
-                    for param_index, (p_name, p_val) in enumerate(func_dict['function']['parameters']['properties'].items()):
+                    st.session_state.functions[new_key]['description'] = function_data.get('description', '')
+
+                    class_path = func_dict.get('class', '').split('.')
+                    st.session_state.functions[new_key]['module'] = class_path[0] if len(class_path) > 1 else ''
+                    st.session_state.functions[new_key]['class'] = class_path[1] if len(class_path) > 1 else ''
+
+                    st.session_state.functions[new_key]['parameters']['required'] = parameters.get('required', [])
+
+                    for param_index, (p_name, p_val) in enumerate(properties.items()):
                         add_param(new_key)
-                        st.session_state.functions[new_key]['parameters']['properties'][param_index]['name'] = p_name
-                        st.session_state.functions[new_key]['parameters']['properties'][param_index]['type'] = p_val['type']
-                        st.session_state.functions[new_key]['parameters']['properties'][param_index]['description'] = p_val['description']
+                        param_entry = st.session_state.functions[new_key]['parameters']['properties'][param_index]
+                        param_entry['name'] = p_name
+                        param_entry['type'] = p_val.get('type', '')
+                        param_entry['description'] = p_val.get('description', '')
+
+
+                # for func_name, func_dict in config.items():
+                #     add_input()
+                #     new_key = list(st.session_state.functions.keys())[-1]
+                #     st.session_state.functions[new_key]['name'] = func_name
+                #     st.session_state.functions[new_key]['description'] = func_dict['function']['description']
+                #     if '.' in func_dict['class']:
+                #         module_class_list = func_dict['class'].split('.')
+                #         st.session_state.functions[new_key]['module'] = module_class_list[0]
+                #         st.session_state.functions[new_key]['class'] = module_class_list[1]
+                #     st.session_state.functions[new_key]['parameters']['required'] = func_dict['function']['parameters']['required']
+                #     for param_index, (p_name, p_val) in enumerate(func_dict['function']['parameters']['properties'].items()):
+                #         add_param(new_key)
+                #         st.session_state.functions[new_key]['parameters']['properties'][param_index]['name'] = p_name
+                #         st.session_state.functions[new_key]['parameters']['properties'][param_index]['type'] = p_val['type']
+                #         st.session_state.functions[new_key]['parameters']['properties'][param_index]['description'] = p_val['description']
 
                 st.session_state.existing_files.append(file_id)
                 st.rerun()
