@@ -10,6 +10,7 @@ def function_tab_content():
         st.session_state.functions = {}
         st.session_state.function_errors = {}  # Store validation errors
         st.session_state.function_results = {}
+        st.session_state.function_file_name = "function.hocon"
 
     # Function to add a new input box
     def add_input():
@@ -20,7 +21,8 @@ def function_tab_content():
     # Function to add a new parameter
     def add_param(function_key_index: int):
         new_key = max(st.session_state.functions[function_key_index]['parameters']['properties'].keys(), default=-1) + 1
-        st.session_state.functions[function_key_index]['parameters']['properties'][new_key] = {"name": "", "type": [], "description": ""}
+        # st.session_state.functions[function_key_index]['parameters']['properties'][new_key] = {"name": "", "type": [], "description": ""}
+        st.session_state.functions[function_key_index]['parameters']['properties'][new_key] = {"name": "", "type": "", "description": ""}
 
     # Function to remove a specific input box
     def remove_input(input_key: int):
@@ -99,11 +101,26 @@ def function_tab_content():
                         st.session_state.functions[key]["parameters"]["properties"][param_key]["name"] = new_param_name
                         st.session_state[expander_key] = True  # Force open when renaming
                         st.rerun()
-                    st.session_state.functions[key]["parameters"]["properties"][param_key]["type"] = st.multiselect(
+
+                    def safe_index(lst, item):
+                        return lst.index(item) if item in lst else None
+                    # new_types = st.multiselect(
+                    #     label="Parameter type",
+                    #     options=TYPES,
+                    #     default=st.session_state.functions[key]["parameters"]["properties"][param_key]["type"],
+                    #     key=f"input_{key}_param_type_{param_key}",
+                    # )
+                    new_types = st.selectbox(
                         label="Parameter type",
                         options=TYPES,
+                        index=safe_index(TYPES, st.session_state.functions[key]["parameters"]["properties"][param_key]["type"]),
                         key=f"input_{key}_param_type_{param_key}",
                     )
+                    if new_types != st.session_state.functions[key]["parameters"]["properties"][param_key]["type"]:
+                        st.session_state.functions[key]["parameters"]["properties"][param_key]["type"] = new_types
+                        st.session_state[expander_key] = True
+                        st.rerun()
+
                     prev_prop_desc = st.session_state.functions[key]["parameters"]["properties"][param_key]["description"]
                     new_prop_desc = st.text_area(
                         label="Parameter description",
@@ -155,7 +172,6 @@ def function_tab_content():
                 key=f'required_{key}',
                 help='Required parameters'
             )
-            # st.session_state.functions[key]['parameters']['required'] = required
 
             if required != st.session_state.functions[key]['parameters']['required']:
                 st.session_state.functions[key]['parameters']['required'] = required
@@ -256,23 +272,6 @@ def function_tab_content():
                         param_entry['type'] = p_val.get('type', '')
                         param_entry['description'] = p_val.get('description', '')
 
-
-                # for func_name, func_dict in config.items():
-                #     add_input()
-                #     new_key = list(st.session_state.functions.keys())[-1]
-                #     st.session_state.functions[new_key]['name'] = func_name
-                #     st.session_state.functions[new_key]['description'] = func_dict['function']['description']
-                #     if '.' in func_dict['class']:
-                #         module_class_list = func_dict['class'].split('.')
-                #         st.session_state.functions[new_key]['module'] = module_class_list[0]
-                #         st.session_state.functions[new_key]['class'] = module_class_list[1]
-                #     st.session_state.functions[new_key]['parameters']['required'] = func_dict['function']['parameters']['required']
-                #     for param_index, (p_name, p_val) in enumerate(func_dict['function']['parameters']['properties'].items()):
-                #         add_param(new_key)
-                #         st.session_state.functions[new_key]['parameters']['properties'][param_index]['name'] = p_name
-                #         st.session_state.functions[new_key]['parameters']['properties'][param_index]['type'] = p_val['type']
-                #         st.session_state.functions[new_key]['parameters']['properties'][param_index]['description'] = p_val['description']
-
                 st.session_state.existing_files.append(file_id)
                 st.rerun()
 
@@ -305,11 +304,13 @@ def function_tab_content():
     # Convert to HOCON format and write to file
     hocon_str = HOCONConverter.convert(config, "hocon")
 
-    filename = st.text_input("Enter filename", "functions.hocon")
+    filename = st.text_input("Enter filename", st.session_state.function_file_name)
+    if filename != st.session_state.function_file_name:
+        st.session_state.function_file_name = filename
 
     st.download_button(
         label="💾 Download function spec as HOCON File",
         data=hocon_str,
-        file_name=filename if filename else "functions.hocon",
+        file_name=st.session_state.function_file_name,
         mime="text/plain",
     )

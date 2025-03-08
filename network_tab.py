@@ -10,7 +10,7 @@ def network_tab_content():
         edges = []
 
         if "inputs" in st.session_state and st.session_state.inputs:
-            for k, v in st.session_state.inputs.items():
+            for _, v in st.session_state.inputs.items():
                 name = v['name']
                 if name != '':
                     nodes.append(Node(id=name, label=name, size=30))
@@ -18,10 +18,10 @@ def network_tab_content():
                         for i in v['tools']:
                             edges.append(Edge(source=name, target=i))
 
-        config = Config(width=750,
-                        height=750,
+        config = Config(width=1000,
+                        height=1000,
                         directed=True,
-                        physics=True,
+                        physics=False,
                         hierarchical=st.session_state.hierarchical,
                         )
 

@@ -26,6 +26,7 @@ def substitution_tab_content():
         st.session_state.user_vars = {}
         st.session_state.existing_files = []
         st.session_state.sub_dict = {}
+        st.session_state.key_value_file_name = "key_value.hocon"
 
     st.title("Define Your Variables")
     st.markdown("- Use **\\${key}** or **\\$key** to substitute for value.")
@@ -107,11 +108,13 @@ def substitution_tab_content():
     # Convert to HOCON format and write to file
     hocon_str = HOCONConverter.convert(config, "hocon")
 
-    filename = st.text_input("Enter filename", "key_value.hocon")
+    filename = st.text_input("Enter filename", st.session_state.key_value_file_name)
+    if filename != st.session_state.key_value_file_name:
+        st.session_state.key_value_file_name = filename
 
     st.download_button(
         label="💾 Download Key/Value as HOCON File",
         data=hocon_str,
-        file_name=filename if filename else "key_value.hocon",
+        file_name=st.session_state.key_value_file_name,
         mime="text/plain",
     )

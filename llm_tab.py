@@ -25,13 +25,16 @@ def llm_tab_content():
 
         default_llm_model = st.selectbox(label="Model",
                                 options=list(LLM_MODEL_DICT.keys()),
-                                index=list(LLM_MODEL_DICT.values()).index(st.session_state.llm_model),
+                                # index=list(LLM_MODEL_DICT.values()).index(st.session_state.llm_model),
+                                index=list(LLM_MODEL_DICT.keys()).index(st.session_state.llm_model),
                                 help='Large langauge model'
                                 )
         default_temperature = st.slider("Temperature", 0.0, 1.0, st.session_state.temperature, help='High for creativity, low for precision.')
 
-        if LLM_MODEL_DICT[default_llm_model] != st.session_state.llm_model or default_temperature != st.session_state.temperature:
-            st.session_state.llm_model = LLM_MODEL_DICT[default_llm_model]
+        # if LLM_MODEL_DICT[default_llm_model] != st.session_state.llm_model or default_temperature != st.session_state.temperature:
+        if default_llm_model != st.session_state.llm_model or default_temperature != st.session_state.temperature:
+            # st.session_state.llm_model = LLM_MODEL_DICT[default_llm_model]
+            st.session_state.llm_model = default_llm_model
             st.session_state.temperature = default_temperature
             st.rerun()
 

@@ -1,6 +1,0 @@
-include "config.hocon"
-include "aaosa.hocon"
-a {include "config.hocon"}
-b = ${app.version}
-c = ${a.user}
-home = ${HOME}

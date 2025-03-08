@@ -66,6 +66,12 @@ def sidebar_content():
 
             st.title("Agents Input Fields")
 
+            # if st.session_state.add_input:
+            #     for _ in range(st.session_state.add_input):
+            #         add_input()
+            #     del st.session_state.add_input
+            #     st.rerun()
+
             input_keys = list(st.session_state.inputs.keys())  # Store keys to avoid modifying while iterating
 
             to_remove = None  # Store key to remove
@@ -157,13 +163,22 @@ def sidebar_content():
                         st.session_state[expander_key] = True  # Force open when renaming
                         st.rerun()
 
-                    st.session_state.function_names[key] = st.selectbox(
-                                                            label="function",
-                                                            options=list(st.session_state.function_results),
-                                                            index=None,
-                                                            key=f"function_{key}",
-                                                            help="Function called by the agent"
-                                                            )
+                    def safe_index(lst, item):
+                        return lst.index(item) if item in lst else None
+
+                    func_name_list = list(st.session_state.function_results)
+                    prev_f_name = st.session_state.function_names[key]
+                    f_name = st.selectbox(
+                                label="function",
+                                options=func_name_list,
+                                index=safe_index(func_name_list, st.session_state.function_names[key]),
+                                key=f"function_{key}",
+                                help="Function called by the agent"
+                            )
+
+                    if f_name != prev_f_name:
+                        st.session_state.function_names[key] = f_name
+                        st.rerun()
 
                     if st.session_state.function_results and st.session_state.function_names[key]:
                         st.session_state.inputs[key]["function"] = st.session_state.function_results[st.session_state.function_names[key]]['function']
@@ -173,7 +188,8 @@ def sidebar_content():
                 with st.expander(f"LLM for '{st.session_state.inputs[key]['name'] or 'Node'}'"):
                     llm_model = st.selectbox(label="Model",
                                 options=list(LLM_MODEL_DICT.keys()),
-                                index=list(LLM_MODEL_DICT.values()).index(st.session_state.inputs[key]['llm_config']['model_name']),
+                                # index=list(LLM_MODEL_DICT.values()).index(st.session_state.inputs[key]['llm_config']['model_name']),
+                                index=list(LLM_MODEL_DICT.keys()).index(st.session_state.inputs[key]['llm_config']['model_name']),
                                 key=f"model_name_{key}",
                                 help='Large langauge model'
                                 )
@@ -181,8 +197,10 @@ def sidebar_content():
                                             key=f"temperature_{key}",
                                             help='High for creativity, low for precision.')
 
-                    if LLM_MODEL_DICT[llm_model] != st.session_state.inputs[key]['llm_config']['model_name'] or temperature != st.session_state.inputs[key]['llm_config']['temperature']:
-                        st.session_state.inputs[key]['llm_config']['model_name'] = LLM_MODEL_DICT[llm_model]
+                    # if LLM_MODEL_DICT[llm_model] != st.session_state.inputs[key]['llm_config']['model_name'] or temperature != st.session_state.inputs[key]['llm_config']['temperature']:
+                    if llm_model != st.session_state.inputs[key]['llm_config']['model_name'] or temperature != st.session_state.inputs[key]['llm_config']['temperature']:
+                        # st.session_state.inputs[key]['llm_config']['model_name'] = LLM_MODEL_DICT[llm_model]
+                        st.session_state.inputs[key]['llm_config']['model_name'] = llm_model
                         st.session_state.inputs[key]['llm_config']['temperature'] = temperature
                         st.rerun()
 
@@ -224,14 +242,17 @@ def sidebar_content():
             # Convert to HOCON format and write to file
             hocon_str = HOCONConverter.convert(config, "hocon")
 
-            filename = st.text_input("Enter agent network name", "config.hocon")
+            filename = st.text_input("Enter agent network name", st.session_state.network_file_name)
+            if filename != st.session_state.network_file_name:
+                st.session_state.network_file_name = filename
+                st.rerun()
 
             disabled = any(list(st.session_state.errors.values()) + list(st.session_state.function_errors.values()))
 
             st.download_button(
                 label="💾 Download HOCON File",
                 data=hocon_str,
-                file_name=filename if filename else "config.hocon",
+                file_name=st.session_state.network_file_name,
                 mime="text/plain",
                 disabled=disabled
             )

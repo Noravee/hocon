@@ -9,11 +9,12 @@ from substitution_tab import substitution_tab_content
 
 st.set_page_config(page_title="HOCON editor", layout="centered")
 
+st.session_state.add_input = 0
+st.session_state.add_func_param = {}
+
 # Initialize session state for sidebar visibility
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False  # Sidebar starts hidden
-
-sidebar_content()
 
 create, llm, network, function, substitution = st.tabs(['Create/Load', 'Default LLM', 'Network', 'Functions', 'Substitution'])
 
@@ -31,3 +32,5 @@ with function:
 
 with substitution:
     substitution_tab_content()
+
+sidebar_content()

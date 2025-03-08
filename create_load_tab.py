@@ -1,3 +1,4 @@
+from pyhocon import ConfigFactory
 import streamlit as st
 
 LLM_MODEL_DICT = {
@@ -18,6 +19,24 @@ LLM_MODEL_DICT = {
 }
 
 
+def get_key(d, value):
+    return next((k for k, v in d.items() if v == value))
+
+def get_value(d, key):
+    # Step 1: If the key exists in the dictionary, return its value
+    if key in d:
+        # return d[key]
+        return key
+
+    # Step 2: If the key doesn't exist, check if it's in the values
+    if key in d.values():
+        # return key
+        return get_key(d, key)
+
+    # Step 3: If nothing matches, return the first value in the dictionary
+    # return next(iter(d.values()))
+    return next(iter(d.keys()))
+
 @st.dialog("Warning")
 def confirm():
     st.warning("⚠️ This will delete existing network and cannot be undone.")
@@ -26,11 +45,20 @@ def confirm():
         create_network()
         st.rerun()
 
+@st.dialog("Warning")
+def confirm_load(uploaded_file):
+    st.warning("⚠️ This will delete existing network and cannot be undone.")
+    st.warning("Do you want to proceed?")
+    if st.button("Confirm"):
+        load_network(uploaded_file)
+        st.rerun()
+
 def create_network():
 
     # Initialize session state variables
     st.session_state.show_sidebar = True  # Show sidebar when button is clicked
-    st.session_state.llm_model = list(LLM_MODEL_DICT.values())[0]
+    # st.session_state.llm_model = list(LLM_MODEL_DICT.values())[0]
+    st.session_state.llm_model = list(LLM_MODEL_DICT.keys())[0]
     st.session_state.temperature = 0.5
     st.session_state.inputs = {0: {
         "name": "",
@@ -44,7 +72,98 @@ def create_network():
     st.session_state.errors = {}  # Store validation errors
     st.session_state.function_names = {0: ""}
     st.session_state.hierarchical = False
-    st.rerun()
+    st.session_state.existing_functions = {}
+    st.session_state.network_file_name = "network.hocon"
+
+def load_network(uploaded_file):
+
+    create_network()
+
+    try:
+        # Attempt to load as a HOCON or CONF file
+        if uploaded_file.name.endswith(".hocon") or uploaded_file.name.endswith(".conf") or uploaded_file.name.endswith(".json"):
+            config = ConfigFactory.parse_string(uploaded_file.getvalue().decode("utf-8"))
+        else:
+            st.error("Unsupported file format!")
+
+    except Exception as e:
+        st.error(f"An error occurred while loading the file: {e}")
+
+    default_llm_config = config.get('llm_config', {})
+    if default_llm_config:
+        default_llm_model = default_llm_config.get('model_name', list(LLM_MODEL_DICT.keys())[0])
+        st.session_state.llm_model = get_value(LLM_MODEL_DICT, default_llm_model)
+        st.session_state.temperature = default_llm_config.get('temperature', 0.5)
+
+    network = config.get('tools', [])
+    if network and isinstance(network, list):
+        for agent_index, agent in enumerate(network):
+            # Ensure the key exists before accessing it
+            st.session_state.inputs.setdefault(agent_index, {
+                "name": "",
+                "class": "",
+                "function": {},
+                "instructions": "",
+                "command": "",
+                "tools": [],
+                "llm_config": {"model_name": st.session_state.llm_model, "temperature": st.session_state.temperature}
+            })
+            agent_entry = st.session_state.inputs[agent_index]
+            agent_entry['name'] = agent['name']
+            module_class = agent.get('class', '')
+            agent_entry['class'] = module_class
+            instructions = agent.get('instructions', '')
+            agent_entry['instructions'] = instructions
+            command = agent.get('command', '')
+            agent_entry['command'] = command
+            tools = agent.get('tools', [])
+            agent_entry['tools'] = tools
+            llm_config = agent.get('llm_config', {'model_name': st.session_state.llm_model, 'temperature': st.session_state.temperature})
+            llm_model = llm_config.get('model_name', default_llm_model)
+            agent_entry['llm_config']['model_name'] = get_value(LLM_MODEL_DICT, llm_model)
+            agent_entry['llm_config']['temperature'] = llm_config.get('temperature', st.session_state.temperature)
+
+            func = agent.get('function', {})
+            if func and isinstance(func, dict):
+                if func not in list(st.session_state.existing_functions.values()):
+                    st.session_state.existing_functions[agent_index] = func
+                    func_index = max(st.session_state.functions, default=-1) + 1
+                    st.session_state.functions.setdefault(func_index, {
+                        "name": "",
+                        "description": "",
+                        "parameters": {"type": "object", "properties": {}, "required": []},
+                        "module": "",
+                        "class": ""
+                    })
+                    func_entry = st.session_state.functions[func_index]
+                    func_entry['name'] = f'func_{func_index}'
+                    st.session_state.function_names[agent_index] = func_entry['name']
+                    # st.session_state.function_results[func_entry['name']] = {}
+                    func_desc = func.get('description', '')
+                    func_entry['description'] = func_desc
+                    if module_class:
+                        module_class_list = module_class.split('.')
+                        func_entry['module'] = module_class_list[0] if len(module_class_list) > 1 else ''
+                        func_entry['class'] = module_class_list[1] if len(module_class_list) > 1 else ''
+                    parameters = func.get('parameters', {})
+                    func_entry['parameters']['required'] = parameters.get('required', [])
+                    properties = parameters.get('properties', {})
+                    st.session_state.add_func_param[f'func_{func_index}'] = len(properties)
+                    for param_index, (p_name, p_val) in enumerate(properties.items()):
+                        func_entry['parameters']['properties'].setdefault(param_index, {
+                            "name": "",
+                            #"type": [],
+                            "type": "",
+                            "description": ""
+                        })
+                        func_entry['parameters']['properties'][param_index]['name'] = p_name
+                        func_entry['parameters']['properties'][param_index]['type'] = p_val.get('type', '')
+                        func_entry['parameters']['properties'][param_index]['description'] = p_val.get('description', '')
+                else:
+                    st.session_state.function_names[agent_index] = st.session_state.function_names[get_key(st.session_state.existing_functions, func)]
+            else:
+                st.session_state.function_names[agent_index] = ''
+
 
 def create_tab_content():
     st.title("Create Agent Network")
@@ -54,3 +173,21 @@ def create_tab_content():
             confirm()
         else:
             create_network()
+            st.rerun()
+
+    st.title("Load Agent Network")
+
+    uploaded_file = st.file_uploader(
+                        label="Upload Agent Network from File",
+                        type=['hocon', 'conf'],
+                        key='network_loader',
+                        )
+    if uploaded_file:
+        file_id = uploaded_file.file_id
+        if file_id not in st.session_state.existing_files:
+            st.session_state.existing_files.append(file_id)
+            if st.session_state.show_sidebar:
+                confirm_load(uploaded_file)
+            else:
+                load_network(uploaded_file)
+                st.rerun()
