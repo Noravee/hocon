@@ -164,13 +164,13 @@ def sidebar_content():
                         st.rerun()
 
                     def safe_index(lst, item):
-                        return lst.index(item) if item in lst else None
+                        return lst.index(item) + 1 if item in lst else None
 
                     func_name_list = list(st.session_state.function_results)
                     prev_f_name = st.session_state.function_names[key]
                     f_name = st.selectbox(
                                 label="function",
-                                options=func_name_list,
+                                options=[None] + func_name_list,
                                 index=safe_index(func_name_list, st.session_state.function_names[key]),
                                 key=f"function_{key}",
                                 help="Function called by the agent"
@@ -178,11 +178,14 @@ def sidebar_content():
 
                     if f_name != prev_f_name:
                         st.session_state.function_names[key] = f_name
+                        if st.session_state.function_results:
+                            if st.session_state.function_names[key] is None:
+                                st.session_state.inputs[key]["function"] = {}
+                                st.session_state.inputs[key]["class"] = ''
+                            else:
+                                st.session_state.inputs[key]["function"] = st.session_state.function_results[st.session_state.function_names[key]]['function']
+                                st.session_state.inputs[key]["class"] = st.session_state.function_results[st.session_state.function_names[key]]['class']
                         st.rerun()
-
-                    if st.session_state.function_results and st.session_state.function_names[key]:
-                        st.session_state.inputs[key]["function"] = st.session_state.function_results[st.session_state.function_names[key]]['function']
-                        st.session_state.inputs[key]["class"] = st.session_state.function_results[st.session_state.function_names[key]]['class']
 
                 # Expander for each input (contains "llm_config")
                 with st.expander(f"LLM for '{st.session_state.inputs[key]['name'] or 'Node'}'"):

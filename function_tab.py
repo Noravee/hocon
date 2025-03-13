@@ -84,13 +84,13 @@ def function_tab_content():
             param_cols = st.columns([4, 1])
 
             # Track expander state manually
-            expander_key = f"expander_{key}_{param_key}"
-            if expander_key not in st.session_state:
-                st.session_state[expander_key] = False  # Default to collapsed
+            expander_func_key = f"expander_{key}_{param_key}"
+            if expander_func_key not in st.session_state:
+                st.session_state[expander_func_key] = False  # Default to collapsed
 
             with param_cols[0]:
                 param_name = st.session_state.functions[key]["parameters"]["properties"][param_key]["name"]
-                with st.expander(f"Parameter: {param_name if param_name else ''}", expanded=st.session_state[expander_key]) as expander:
+                with st.expander(f"Parameter: {param_name if param_name else ''}", expanded=st.session_state[expander_func_key]) as expander:
                     new_param_name = st.text_input(
                         label="Parameter name",
                         key=f"input_{key}_param_name_{param_key}",
@@ -99,7 +99,7 @@ def function_tab_content():
                     # Update session state only if name changes
                     if new_param_name != param_name:
                         st.session_state.functions[key]["parameters"]["properties"][param_key]["name"] = new_param_name
-                        st.session_state[expander_key] = True  # Force open when renaming
+                        st.session_state[expander_func_key] = True  # Force open when renaming
                         st.rerun()
 
                     def safe_index(lst, item):
@@ -118,7 +118,7 @@ def function_tab_content():
                     )
                     if new_types != st.session_state.functions[key]["parameters"]["properties"][param_key]["type"]:
                         st.session_state.functions[key]["parameters"]["properties"][param_key]["type"] = new_types
-                        st.session_state[expander_key] = True
+                        st.session_state[expander_func_key] = True
                         st.rerun()
 
                     prev_prop_desc = st.session_state.functions[key]["parameters"]["properties"][param_key]["description"]
@@ -129,12 +129,12 @@ def function_tab_content():
                     )
                     if new_prop_desc != prev_prop_desc:
                         st.session_state.functions[key]["parameters"]["properties"][param_key]["description"] = new_prop_desc
-                        st.session_state[expander_key] = True  # Force open when renaming
+                        st.session_state[expander_func_key] = True  # Force open when renaming
                         st.rerun()
 
             # Allow manual collapsing
             if not expander:  # If user collapses manually
-                st.session_state[expander_key] = False
+                st.session_state[expander_func_key] = False
 
             with param_cols[1]:
                 if st.button("❌", key=f"remove_param_{key}_{param_key}"):
