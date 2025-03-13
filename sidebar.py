@@ -63,14 +63,21 @@ def sidebar_content():
                     return string.Template(d).safe_substitute(replacements)
                 return d  # Return unchanged for other types
 
+            def remove_empty_values(d):
+                """Recursively remove empty values ('', [], or {}) starting from the deepest level."""
+                if isinstance(d, dict):
+                    # First process inner dictionaries
+                    cleaned_dict = {k: remove_empty_values(v) for k, v in d.items()}
+                    # Then remove keys that became empty
+                    return {k: v for k, v in cleaned_dict.items() if v not in ('', [], {})}
+
+                elif isinstance(d, list):  
+                    # Process lists but keep them intact
+                    return [remove_empty_values(item) for item in d]
+
+                return d  # Return unchanged for other types
 
             st.title("Agents Input Fields")
-
-            # if st.session_state.add_input:
-            #     for _ in range(st.session_state.add_input):
-            #         add_input()
-            #     del st.session_state.add_input
-            #     st.rerun()
 
             input_keys = list(st.session_state.inputs.keys())  # Store keys to avoid modifying while iterating
 
@@ -238,6 +245,8 @@ def sidebar_content():
                 },
                 "tools": [i for i in new_tools.values() if i['name'] != '']
             }
+
+            data = remove_empty_values(data)
 
             # Convert dictionary to HOCON config
             config = ConfigFactory.from_dict(data)
