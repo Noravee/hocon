@@ -192,6 +192,7 @@ def sidebar_content():
                             else:
                                 st.session_state.inputs[key]["function"] = st.session_state.function_results[st.session_state.function_names[key]]['function']
                                 st.session_state.inputs[key]["class"] = st.session_state.function_results[st.session_state.function_names[key]]['class']
+                        # st.session_state[expander_key] = True  # Force open when renaming
                         st.rerun()
 
                 # Expander for each input (contains "llm_config")

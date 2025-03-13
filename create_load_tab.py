@@ -1,3 +1,5 @@
+import re
+
 from pyhocon import ConfigFactory
 import streamlit as st
 
@@ -18,7 +20,6 @@ LLM_MODEL_DICT = {
     "Claude 3 Haiku": "claude-3-haiku-20240307"
 }
 
-
 def get_key(d, value):
     return next((k for k, v in d.items() if v == value))
 
@@ -36,6 +37,13 @@ def get_value(d, key):
     # Step 3: If nothing matches, return the first value in the dictionary
     # return next(iter(d.values()))
     return next(iter(d.keys()))
+
+def replace_value_with_key(text, mapping):
+    """Replace values in text with corresponding keys in ${key} format."""
+    for key, value in mapping.items():
+        pattern = re.escape(value)  # Escape special characters in the value
+        text = re.sub(rf'\b{pattern}\b', f'${{{key}}}', text)  # Replace whole words only
+    return text
 
 @st.dialog("Warning")
 def confirm():
@@ -109,13 +117,13 @@ def load_network(uploaded_file):
                 "llm_config": {"model_name": st.session_state.llm_model, "temperature": st.session_state.temperature}
             })
             agent_entry = st.session_state.inputs[agent_index]
-            agent_entry['name'] = agent['name']
+            agent_entry['name'] = replace_value_with_key(agent['name'], st.session_state.sub_dict)
             module_class = agent.get('class', '')
-            agent_entry['class'] = module_class
+            agent_entry['class'] = replace_value_with_key(module_class, st.session_state.sub_dict)
             instructions = agent.get('instructions', '')
-            agent_entry['instructions'] = instructions
+            agent_entry['instructions'] = replace_value_with_key(instructions, st.session_state.sub_dict)
             command = agent.get('command', '')
-            agent_entry['command'] = command
+            agent_entry['command'] = replace_value_with_key(command, st.session_state.sub_dict)
             tools = agent.get('tools', [])
             agent_entry['tools'] = tools
             llm_config = agent.get('llm_config', {'model_name': st.session_state.llm_model, 'temperature': st.session_state.temperature})
@@ -140,11 +148,11 @@ def load_network(uploaded_file):
                     st.session_state.function_names[agent_index] = func_entry['name']
                     # st.session_state.function_results[func_entry['name']] = {}
                     func_desc = func.get('description', '')
-                    func_entry['description'] = func_desc
+                    func_entry['description'] = replace_value_with_key(func_desc, st.session_state.sub_dict)
                     if module_class:
                         module_class_list = module_class.split('.')
-                        func_entry['module'] = module_class_list[0] if len(module_class_list) > 1 else ''
-                        func_entry['class'] = module_class_list[1] if len(module_class_list) > 1 else ''
+                        func_entry['module'] = replace_value_with_key(module_class_list[0], st.session_state.sub_dict) if len(module_class_list) > 1 else ''
+                        func_entry['class'] = replace_value_with_key(module_class_list[1], st.session_state.sub_dict) if len(module_class_list) > 1 else ''
                     parameters = func.get('parameters', {})
                     func_entry['parameters']['required'] = parameters.get('required', [])
                     properties = parameters.get('properties', {})
@@ -156,9 +164,9 @@ def load_network(uploaded_file):
                             "type": "",
                             "description": ""
                         })
-                        func_entry['parameters']['properties'][param_index]['name'] = p_name
+                        func_entry['parameters']['properties'][param_index]['name'] = replace_value_with_key(p_name, st.session_state.sub_dict)
                         func_entry['parameters']['properties'][param_index]['type'] = p_val.get('type', '')
-                        func_entry['parameters']['properties'][param_index]['description'] = p_val.get('description', '')
+                        func_entry['parameters']['properties'][param_index]['description'] = replace_value_with_key(p_val.get('description', ''), st.session_state.sub_dict)
                 else:
                     st.session_state.function_names[agent_index] = st.session_state.function_names[get_key(st.session_state.existing_functions, func)]
             else:
