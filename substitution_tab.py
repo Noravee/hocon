@@ -17,9 +17,15 @@ def substitution_tab_content():
     def remove_var(key):
         if len(st.session_state.user_vars) >= 1:
             del st.session_state.user_vars[key]
-
+            update_sub_dict()
             st.rerun()  # Forces immediate UI update
 
+    def update_sub_dict():
+        st.session_state.sub_dict = {
+            v['var']: v['sub_value']
+            for v in st.session_state.user_vars.values()
+            if v['var'] and v['sub_value']
+        }
 
     # Initialize a dictionary in session state to store user-defined variables
     if "user_vars" not in st.session_state:
@@ -43,6 +49,7 @@ def substitution_tab_content():
             new_key = st.text_input("Key", value=st.session_state.user_vars[key]["var"], key=f"var_{key}", help='Key or variable name')
             if new_key != prev_key:
                 st.session_state.user_vars[key]["var"] = new_key
+                update_sub_dict()
                 st.rerun()
 
             prev_value = st.session_state.user_vars[key]["sub_value"]
@@ -54,6 +61,7 @@ def substitution_tab_content():
             )
             if new_value != prev_value:
                 st.session_state.user_vars[key]["sub_value"] = new_value
+                update_sub_dict()
                 st.rerun()
 
         with cols[1]:
@@ -91,7 +99,7 @@ def substitution_tab_content():
                     add_var()
                     st.session_state.user_vars[list(st.session_state.user_vars.keys())[-1]]['var'] = key_var
                     st.session_state.user_vars[list(st.session_state.user_vars.keys())[-1]]['sub_value'] = sub_value
-
+                update_sub_dict()
                 st.session_state.existing_files.append(file_id)
                 st.rerun()
 
@@ -100,7 +108,7 @@ def substitution_tab_content():
         remove_var(to_remove)
 
     # Create dict for substitution
-    st.session_state.sub_dict = {v['var']: v['sub_value'] for v in st.session_state.user_vars.values() if v['var']}
+    # st.session_state.sub_dict = {v['var']: v['sub_value'] for v in st.session_state.user_vars.values() if v['var'] and v['sub_value']}
 
     # Convert dictionary to HOCON config
     config = ConfigFactory.from_dict(st.session_state.sub_dict)

@@ -9,6 +9,8 @@ def network_tab_content():
         nodes = []
         edges = []
 
+        st.session_state.hierarchical = st.toggle("Hierarchical view")
+
         if "inputs" in st.session_state and st.session_state.inputs:
             for _, v in st.session_state.inputs.items():
                 name = v['name']
@@ -18,14 +20,15 @@ def network_tab_content():
                         for i in v['tools']:
                             edges.append(Edge(source=name, target=i))
 
-        config = Config(width=1000,
-                        height=1000,
+        config = Config(width=750,
+                        height=500,
                         directed=True,
                         physics=False,
                         hierarchical=st.session_state.hierarchical,
                         )
 
-        st.session_state.hierarchical = st.toggle("Hierarchical view")
+        # st.session_state.hierarchical = st.toggle("Hierarchical view")
+        # st.write(st.session_state.hierarchical)
 
         agraph(nodes=nodes,
             edges=edges,

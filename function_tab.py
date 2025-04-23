@@ -1,7 +1,8 @@
 from pyhocon import ConfigFactory, HOCONConverter
 import streamlit as st
 
-TYPES = ['string', 'float', 'int', 'object', 'array', 'boolean', 'null']
+TYPES = ['string', 'float', 'int', 'object', 'array', 'boolean']
+
 
 def function_tab_content():
 

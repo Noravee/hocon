@@ -20,8 +20,10 @@ LLM_MODEL_DICT = {
     "Claude 3 Haiku": "claude-3-haiku-20240307"
 }
 
+
 def get_key(d, value):
     return next((k for k, v in d.items() if v == value))
+
 
 def get_value(d, key):
     # Step 1: If the key exists in the dictionary, return its value
@@ -38,12 +40,17 @@ def get_value(d, key):
     # return next(iter(d.values()))
     return next(iter(d.keys()))
 
+
 def replace_value_with_key(text, mapping):
     """Replace values in text with corresponding keys in ${key} format."""
-    for key, value in mapping.items():
-        pattern = re.escape(value)  # Escape special characters in the value
-        text = re.sub(rf'\b{pattern}\b', f'${{{key}}}', text)  # Replace whole words only
+    # for key, value in mapping.items():
+    #     pattern = re.escape(value)  # Escape special characters in the value
+    #     text = re.sub(rf'\b{pattern}\b', f'${{{key}}}', text)  # Replace whole words only
+    for key, value in sorted(mapping.items(), key=lambda x: -len(x[1])):  # Sort to replace longer values first
+        escaped_value = re.escape(value)
+        text = re.sub(escaped_value, f'${{{key}}}', text)
     return text
+
 
 @st.dialog("Warning")
 def confirm():
@@ -53,6 +60,7 @@ def confirm():
         create_network()
         st.rerun()
 
+
 @st.dialog("Warning")
 def confirm_load(uploaded_file):
     st.warning("⚠️ This will delete existing network and cannot be undone.")
@@ -60,6 +68,7 @@ def confirm_load(uploaded_file):
     if st.button("Confirm"):
         load_network(uploaded_file)
         st.rerun()
+
 
 def create_network():
 
@@ -82,6 +91,7 @@ def create_network():
     st.session_state.hierarchical = False
     st.session_state.existing_functions = {}
     st.session_state.network_file_name = "network.hocon"
+
 
 def load_network(uploaded_file):
 
@@ -160,7 +170,7 @@ def load_network(uploaded_file):
                     for param_index, (p_name, p_val) in enumerate(properties.items()):
                         func_entry['parameters']['properties'].setdefault(param_index, {
                             "name": "",
-                            #"type": [],
+                            # "type": [],
                             "type": "",
                             "description": ""
                         })
